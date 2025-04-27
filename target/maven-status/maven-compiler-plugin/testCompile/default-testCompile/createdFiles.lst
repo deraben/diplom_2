@@ -1,0 +1,12 @@
+api\config\RestAssuredConfig.class
+api\helpers\UserGenerator.class
+api\tests\UserDataUpdateTest.class
+api\clients\OrderClient.class
+api\models\Order.class
+api\models\User.class
+api\clients\UserClient.class
+api\tests\OrderCreationTest.class
+api\tests\UserLoginTest.class
+api\tests\GetUserOrdersTest.class
+api\models\Credentials.class
+api\tests\UserCreationTest.class
