@@ -10,6 +10,7 @@ import static io.restassured.RestAssured.given;
 public class OrderClient {
 
     private static final String ORDERS_PATH = "/orders";
+    private static final String INGREDIENTS_PATH = "/ingredients";
 
     @Step("Create an order with ingredients: {order.ingredients} using token")
     public Response createOrder(String accessToken, Order order) {
@@ -43,5 +44,13 @@ public class OrderClient {
                 .spec(RestAssuredConfig.getBaseRequestSpec())
                 .when()
                 .get(ORDERS_PATH);
+    }
+
+    @Step("Get all ingredients")
+    public Response getAllIngredients() {
+        return given()
+                .spec(RestAssuredConfig.getBaseRequestSpec())
+                .when()
+                .get(INGREDIENTS_PATH);
     }
 }

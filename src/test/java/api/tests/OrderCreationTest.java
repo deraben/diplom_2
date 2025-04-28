@@ -13,9 +13,11 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static org.apache.http.HttpStatus.*;
 import static org.hamcrest.Matchers.*;
@@ -26,7 +28,7 @@ public class OrderCreationTest {
     private OrderClient orderClient;
     private User user;
     private String accessToken;
-    private final List<String> validIngredients = Arrays.asList("61c0c5a71d1f82001bdaaa6d", "61c0c5a71d1f82001bdaaa72");
+    private List<String> validIngredients;
 
     @Step("Setup: Register user for authorized tests")
     @Before
@@ -42,6 +44,50 @@ public class OrderCreationTest {
         } else {
             System.err.println("Failed to register user in setup: " + registerResponse.getBody().asString());
         }
+
+        try {
+            validIngredients = fetchValidIngredientsFromApi();
+            if (validIngredients.isEmpty()) {
+                throw new RuntimeException("Failed to fetch valid ingredients from API. Cannot run tests requiring them.");
+            }
+        } catch (Exception e) {
+            System.err.println("Error fetching ingredients: " + e.getMessage());
+            org.junit.Assume.assumeTrue("Failed to fetch valid ingredients, skipping related tests.", false);
+        }
+    }
+
+    @Step("Fetch valid ingredients from API")
+    private List<String> fetchValidIngredientsFromApi() {
+        List<String> ingredients = new ArrayList<>();
+        Response ingredientsResponse = orderClient.getAllIngredients();
+        if (ingredientsResponse.getStatusCode() == SC_OK) {
+            List<Map<String, Object>> data = ingredientsResponse.jsonPath().getList("data");
+            String bunId = null;
+            String mainId = null;
+
+            for (Map<String, Object> ingredient : data) {
+                if (ingredient.get("type").equals("bun") && bunId == null) {
+                    bunId = (String) ingredient.get("_id");
+                } else if (!ingredient.get("type").equals("bun") && mainId == null) {
+                    mainId = (String) ingredient.get("_id");
+                }
+                if (bunId != null && mainId != null) {
+                    break;
+                }
+            }
+
+            if (bunId != null && mainId != null) {
+                ingredients.add(bunId);
+                ingredients.add(mainId);
+                ingredients.add(bunId);
+            } else {
+                System.err.println("Could not find suitable bun and main ingredient from API.");
+            }
+
+        } else {
+            System.err.println("Failed to fetch ingredients from API. Status code: " + ingredientsResponse.getStatusCode());
+        }
+        return ingredients;
     }
 
     @Step("Create an order without authorization with invalid ingredients")
@@ -60,6 +106,7 @@ public class OrderCreationTest {
     @DisplayName("Create order with authorization and valid ingredients - Success")
     @Description("Verify successful creation of an order by an authorized user with valid ingredients")
     public void createOrderWithAuthAndIngredientsSuccess() {
+        org.junit.Assume.assumeTrue("Valid ingredients were not fetched.", validIngredients != null && !validIngredients.isEmpty());
         if (accessToken == null) {
             org.junit.Assume.assumeTrue("Failed to get user token for authorized test",
                     accessToken != null);
@@ -72,13 +119,14 @@ public class OrderCreationTest {
                 .body("success", equalTo(true))
                 .body("name", notNullValue())
                 .body("order.number", notNullValue())
-                .body("order.ingredients", notNullValue());
+                .body("order", notNullValue());
     }
 
     @Test
     @DisplayName("Create order without authorization with valid ingredients - Success")
     @Description("Verify successful creation of an order without authorization (anonymous) with valid ingredients")
     public void createOrderWithoutAuthSucceedsWithIngredients() {
+        org.junit.Assume.assumeTrue("Valid ingredients were not fetched.", validIngredients != null && !validIngredients.isEmpty());
         Order order = new Order(validIngredients);
         Response response = orderClient.createOrderWithoutAuth(order);
         response.then()

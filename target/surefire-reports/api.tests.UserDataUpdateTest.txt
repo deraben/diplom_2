@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: api.tests.UserDataUpdateTest
 -------------------------------------------------------------------------------
-Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 7.912 s -- in api.tests.UserDataUpdateTest
+Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 5.535 s -- in api.tests.UserDataUpdateTest
